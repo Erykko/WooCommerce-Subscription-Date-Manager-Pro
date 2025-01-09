@@ -36,27 +36,26 @@ if (!defined('WCSM_PLUGIN_URL')) {
 }
 
 /**
- * Main plugin class
+ * Main plugin loader class
  */
-final class WC_Subscription_Date_Manager {
+final class WCSM_Plugin {
     /**
      * Single instance
-     *
-     * @var WC_Subscription_Date_Manager
      */
     protected static $_instance = null;
 
     /**
+     * Core instance
+     */
+    public $core = null;
+
+    /**
      * Admin instance
-     *
-     * @var WCSM_Admin
      */
     public $admin = null;
 
     /**
      * Main instance
-     *
-     * @return WC_Subscription_Date_Manager
      */
     public static function instance() {
         if (is_null(self::$_instance)) {
@@ -80,7 +79,7 @@ final class WC_Subscription_Date_Manager {
      */
     private function includes() {
         // Core includes
-        require_once WCSM_PLUGIN_DIR . 'includes/class-wc-subscription-date-manager.php';
+        require_once WCSM_PLUGIN_DIR . 'includes/class-wcsm-core.php';
 
         // Admin includes
         if ($this->is_request('admin')) {
@@ -110,8 +109,8 @@ final class WC_Subscription_Date_Manager {
         // Before init action
         do_action('before_wcsm_init');
 
-        // Set up localization
-        $this->load_textdomain();
+        // Initialize core
+        $this->core = WCSM_Core::instance();
 
         // Init action
         do_action('wcsm_init');
@@ -128,8 +127,6 @@ final class WC_Subscription_Date_Manager {
      * Activation hook
      */
     public function activate() {
-        // Create tables
-        // Set default options
         if (!get_option('wcsm_version')) {
             add_option('wcsm_version', WCSM_VERSION);
         }
@@ -148,9 +145,6 @@ final class WC_Subscription_Date_Manager {
 
     /**
      * What type of request is this?
-     *
-     * @param string $type admin, ajax, cron or frontend
-     * @return bool
      */
     private function is_request($type) {
         switch ($type) {
@@ -194,23 +188,18 @@ final class WC_Subscription_Date_Manager {
 
 /**
  * Main instance of plugin
- *
- * @return WC_Subscription_Date_Manager
  */
 function WCSM() {
-    return WC_Subscription_Date_Manager::instance();
+    return WCSM_Plugin::instance();
 }
 
 // Global for backwards compatibility
 $GLOBALS['wcsm'] = WCSM();
 
-// Activation
-register_activation_hook(__FILE__, array('WC_Subscription_Date_Manager', 'activate'));
-
 // Initialize plugin when plugins are loaded
 add_action('plugins_loaded', function() {
     // Check requirements
-    if (WC_Subscription_Date_Manager::check_requirements()) {
+    if (WCSM_Plugin::check_requirements()) {
         WCSM();
     }
 });
