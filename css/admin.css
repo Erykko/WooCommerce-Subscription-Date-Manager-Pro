@@ -1,0 +1,53 @@
+/**
+ * Add this to the main plugin class (WC_Subscription_Date_Manager)
+ */
+
+/**
+ * Enqueue admin scripts and styles
+ */
+public function enqueue_admin_assets() {
+    $screen = get_current_screen();
+    
+    // Only load on our plugin page
+    if (!$screen || 'woocommerce_page_subscription-date-manager' !== $screen->id) {
+        return;
+    }
+
+    // Plugin version for cache busting
+    $version = WCSM_VERSION;
+
+    // Enqueue styles
+    wp_enqueue_style(
+        'wcsm-admin-styles',
+        WCSM_PLUGIN_URL . 'assets/css/admin.css',
+        array(),
+        $version
+    );
+
+    // jQuery UI Datepicker styles
+    wp_enqueue_style('jquery-ui-datepicker');
+
+    // Enqueue scripts
+    wp_enqueue_script('jquery');
+    wp_enqueue_script('jquery-ui-datepicker');
+    
+    wp_enqueue_script(
+        'wcsm-admin-script',
+        WCSM_PLUGIN_URL . 'assets/js/admin.js',
+        array('jquery', 'jquery-ui-datepicker'),
+        $version,
+        true
+    );
+
+    // Localize script with data
+    wp_localize_script('wcsm-admin-script', 'wcsmData', array(
+        'ajaxurl' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('wcsm_nonce'),
+        'i18n' => array(
+            'confirmUpdate' => __('Are you sure you want to update subscription dates? This action cannot be undone.', 'woo-sub-date-manager'),
+            'processing' => __('Processing...', 'woo-sub-date-manager'),
+            'success' => __('Update completed successfully!', 'woo-sub-date-manager'),
+            'error' => __('An error occurred while processing the update.', 'woo-sub-date-manager'),
+        )
+    ));
+}
