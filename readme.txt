@@ -1,4 +1,4 @@
-=== WooCommerce Subscription Date Manager Pro ===
+WOOCOMMERCE SUBSCRIPTION DATE MANAGER PRO
 Contributors: ericmutema
 Tags: woocommerce, subscriptions, bulk update, payment dates, subscription management
 Requires at least: 5.8
@@ -10,109 +10,100 @@ License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
 Efficiently manage and bulk update WooCommerce subscription payment dates with advanced filtering options.
 
-== Description ==
+=============================================================================== DESCRIPTION
 
 WooCommerce Subscription Date Manager Pro is a professional tool for WooCommerce store owners who need to manage subscription payment dates efficiently. Whether you're adjusting payment schedules for multiple subscribers or implementing date changes for specific customer groups, this plugin streamlines the entire process.
 
-= Key Features =
+=============================================================================== KEY FEATURES
 
-* Bulk update subscription next payment dates
-* Filter subscriptions by date range
-* Exclude specific customers by email
-* Real-time progress tracking
-* Comprehensive error reporting
-* User-friendly interface
-* Advanced filtering options
-* Secure processing
-* Batch processing for performance
-* Comprehensive logging system
+Bulk update subscription next payment dates
+Filter subscriptions by date range
+Exclude specific customers by email
+Real-time progress tracking
+Comprehensive error reporting
+User-friendly interface
+Advanced filtering options
+Secure processing
+Batch processing for performance
+Comprehensive logging system
+=============================================================================== PERFECT FOR
 
-= Perfect For =
+E-commerce managers
+Subscription-based businesses
+Online membership sites
+Digital service providers
+WooCommerce store administrators
+=============================================================================== REQUIREMENTS
 
-* E-commerce managers
-* Subscription-based businesses
-* Online membership sites
-* Digital service providers
-* WooCommerce store administrators
+WordPress 5.8 or higher
+WooCommerce 5.0 or higher
+WooCommerce Subscriptions plugin
+PHP 7.4 or higher
+=============================================================================== INSTALLATION
 
-= Requirements =
+Upload the plugin files to the /wp-content/plugins/woo-subscription-date-manager directory.
+Activate the plugin through the 'Plugins' screen in WordPress.
+Navigate to WooCommerce → Date Manager to use the plugin.
+=============================================================================== FREQUENTLY ASKED QUESTIONS
 
-* WordPress 5.8 or higher
-* WooCommerce 5.0 or higher
-* WooCommerce Subscriptions plugin
-* PHP 7.4 or higher
+Q: Can I preview changes before applying them?
+A: Currently, the plugin does not include a preview feature. Always back up your database before making bulk changes.
 
-== Installation ==
+Q: Is it compatible with WooCommerce Subscriptions?
+A: Yes, this plugin requires WooCommerce Subscriptions to be installed and activated.
 
-1. Upload the plugin files to `/wp-content/plugins/woo-subscription-date-manager` directory
-2. Activate the plugin through the 'Plugins' screen in WordPress
-3. Navigate to WooCommerce → Date Manager to use the plugin
+Q: Can I undo the changes?
+A: We recommend taking a database backup before making changes. The plugin does not include an undo feature.
 
-== Frequently Asked Questions ==
+Q: Does it work with all subscription types?
+A: Yes, it works with all subscription products created with WooCommerce Subscriptions.
 
-= Can I preview changes before applying them? =
+Q: How many subscriptions can I process at once?
+A: The plugin uses batch processing to handle large numbers of subscriptions efficiently. The batch size can be configured in settings.
 
-Currently, the plugin doesn't include a preview feature. Always backup your database before making bulk changes.
+=============================================================================== SCREENSHOTS
 
-= Is it compatible with WooCommerce Subscriptions? =
+Main interface
+Settings page
+Bulk update in progress
+Results screen
+=============================================================================== CHANGELOG
 
-Yes, this plugin requires WooCommerce Subscriptions to be installed and activated.
+VERSION 1.0.2
 
-= Can I undo the changes? =
+Enhanced batch processing for better performance
+Improved error handling and logging
+Added version tracking and upgrade notices
+Better memory management for large subscription lists
+Enhanced security with improved input validation
+Added user information to activity logs
+Improved email filtering (case-insensitive)
+Added processing delays to prevent server overload
+VERSION 1.0.1
 
-We recommend taking a database backup before making changes. The plugin doesn't include an undo feature.
+Bug fixes and improvements
+Enhanced admin interface
+Improved AJAX security
+Better form validation
+VERSION 1.0.0
 
-= Does it work with all subscription types? =
+Initial release
+=============================================================================== UPGRADE NOTICE
 
-Yes, it works with all subscription products created with WooCommerce Subscriptions.
-
-= How many subscriptions can I process at once? =
-
-The plugin uses batch processing to handle large numbers of subscriptions efficiently. The batch size can be configured in settings.
-
-== Screenshots ==
-
-1. Main interface
-2. Settings page
-3. Bulk update in progress
-4. Results screen
-
-== Changelog ==
-
-= 1.0.2 =
-* Enhanced batch processing for better performance
-* Improved error handling and logging
-* Added version tracking and upgrade notices
-* Better memory management for large subscription lists
-* Enhanced security with improved input validation
-* Added user information to activity logs
-* Improved email filtering (case-insensitive)
-* Added processing delays to prevent server overload
-
-= 1.0.1 =
-* Bug fixes and improvements
-* Enhanced admin interface
-* Improved AJAX security
-* Better form validation
-
-= 1.0.0 =
-* Initial release
-
-== Upgrade Notice ==
-
-= 1.0.2 =
+VERSION 1.0.2
 Enhanced performance and security improvements. Recommended update for all users.
 
-= 1.0.1 =
+VERSION 1.0.1
 Important bug fixes and security improvements.
 
-= 1.0.0 =
+VERSION 1.0.0
 Initial release of WooCommerce Subscription Date Manager Pro
 
-== Privacy Policy ==
+=============================================================================== PRIVACY POLICY
 
 This plugin does not collect or store any personal data outside of your WordPress installation. All subscription data remains within your WordPress database and is processed locally.
 
-== Support ==
+=============================================================================== SUPPORT
 
-For support and documentation, visit: https://designnairobi.agency
+For support and documentation, visit:
+https://designnairobi.agency
