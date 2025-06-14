@@ -3,7 +3,7 @@
  * Plugin Name: WooCommerce Subscription Date Manager Pro
  * Plugin URI: https://designnairobi.agency
  * Description: Efficiently manage and bulk update WooCommerce subscription payment dates with advanced filtering options.
- * Version: 1.0.0
+ * Version: 1.0.2
  * Author: Eric Mutema
  * Author URI: https://designnairobi.agency
  * Text Domain: woo-sub-date-manager
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
 
 // Define plugin constants
 if (!defined('WCSM_VERSION')) {
-    define('WCSM_VERSION', '1.0.0');
+    define('WCSM_VERSION', '1.0.2');
 }
 if (!defined('WCSM_PLUGIN_FILE')) {
     define('WCSM_PLUGIN_FILE', __FILE__);
@@ -92,9 +92,11 @@ final class WCSM_Plugin {
      */
     private function init_hooks() {
         register_activation_hook(WCSM_PLUGIN_FILE, array($this, 'activate'));
+        register_activation_hook(WCSM_PLUGIN_FILE, array($this, 'update_version'));
         
         add_action('init', array($this, 'init'), 0);
         add_action('init', array($this, 'load_textdomain'));
+        add_action('plugins_loaded', array($this, 'update_version'));
         
         // Initialize admin
         if ($this->is_request('admin')) {
@@ -129,6 +131,43 @@ final class WCSM_Plugin {
     public function activate() {
         if (!get_option('wcsm_version')) {
             add_option('wcsm_version', WCSM_VERSION);
+        }
+        $this->update_version();
+    }
+
+    /**
+     * Update version if needed
+     */
+    public function update_version() {
+        $current_version = get_option('wcsm_version');
+        
+        if ($current_version !== WCSM_VERSION) {
+            // Perform any upgrade routines here
+            $this->perform_upgrade($current_version, WCSM_VERSION);
+            
+            // Update version in database
+            update_option('wcsm_version', WCSM_VERSION);
+            
+            // Set upgrade notice
+            set_transient('wcsm_upgraded', true, 30);
+        }
+    }
+
+    /**
+     * Perform upgrade routines
+     */
+    private function perform_upgrade($from_version, $to_version) {
+        // Version-specific upgrade routines
+        if (version_compare($from_version, '1.0.2', '<')) {
+            // Clear any cached data that might be incompatible
+            delete_transient('wcsm_subscription_cache');
+            
+            // Add any new default options
+            $options = get_option('wcsm_options', array());
+            if (!isset($options['batch_size'])) {
+                $options['batch_size'] = 25;
+                update_option('wcsm_options', $options);
+            }
         }
     }
 

@@ -101,11 +101,13 @@ class WCSM_Admin {
         wp_localize_script('wcsm-admin-script', 'wcsmData', array(
             'ajaxurl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('wcsm_nonce'),
+            'version' => $version,
             'i18n' => array(
                 'confirmUpdate' => __('Are you sure you want to update subscription dates? This action cannot be undone.', 'woo-sub-date-manager'),
                 'processing' => __('Processing...', 'woo-sub-date-manager'),
                 'success' => __('Update completed successfully!', 'woo-sub-date-manager'),
                 'error' => __('An error occurred while processing the update.', 'woo-sub-date-manager'),
+                'dateError' => __('New payment date must be after the exclusion date.', 'woo-sub-date-manager'),
             )
         ));
     }
@@ -145,6 +147,14 @@ class WCSM_Admin {
             'wcsm_settings',
             'wcsm_general_settings'
         );
+
+        add_settings_field(
+            'enable_logging',
+            __('Enable Detailed Logging', 'woo-sub-date-manager'),
+            array($this, 'render_logging_field'),
+            'wcsm_settings',
+            'wcsm_general_settings'
+        );
     }
 
     /**
@@ -175,6 +185,10 @@ class WCSM_Admin {
             if ($sanitized['batch_size'] > 100) {
                 $sanitized['batch_size'] = 100;
             }
+        }
+
+        if (isset($input['enable_logging'])) {
+            $sanitized['enable_logging'] = (bool) $input['enable_logging'];
         }
 
         return $sanitized;
@@ -349,7 +363,10 @@ class WCSM_Admin {
         $settings = $this->get_settings();
         ?>
         <div class="wrap">
-            <h1><?php _e('Subscription Date Manager', 'woo-sub-date-manager'); ?></h1>
+            <h1>
+                <?php _e('Subscription Date Manager', 'woo-sub-date-manager'); ?>
+                <span class="wcsm-version">v<?php echo esc_html(WCSM_VERSION); ?></span>
+            </h1>
             
             <div class="wcsm-admin-container">
                 <form id="wcsm-update-form" method="post">
@@ -428,7 +445,53 @@ class WCSM_Admin {
                     <p><?php _e('Skipped:', 'woo-sub-date-manager'); ?> <span id="wcsm-stat-skipped">0</span></p>
                     <p><?php _e('Errors:', 'woo-sub-date-manager'); ?> <span id="wcsm-stat-errors">0</span></p>
                 </div>
+
+                <?php $this->render_recent_logs(); ?>
             </div>
+        </div>
+        <?php
+    }
+
+    /**
+     * Render recent logs section
+     */
+    private function render_recent_logs() {
+        $core = WCSM_Core::instance();
+        $logs = $core->get_update_logs();
+        
+        if (empty($logs)) {
+            return;
+        }
+        ?>
+        <div class="wcsm-logs">
+            <h3><?php _e('Recent Activity', 'woo-sub-date-manager'); ?></h3>
+            <table class="wp-list-table widefat fixed striped">
+                <thead>
+                    <tr>
+                        <th><?php _e('Date', 'woo-sub-date-manager'); ?></th>
+                        <th><?php _e('User', 'woo-sub-date-manager'); ?></th>
+                        <th><?php _e('Target Date', 'woo-sub-date-manager'); ?></th>
+                        <th><?php _e('Results', 'woo-sub-date-manager'); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach (array_slice($logs, 0, 5) as $log): ?>
+                    <tr>
+                        <td><?php echo esc_html(date('Y-m-d H:i:s', strtotime($log['timestamp']))); ?></td>
+                        <td><?php echo esc_html($log['user_login'] ?? 'Unknown'); ?></td>
+                        <td><?php echo esc_html(date('Y-m-d', strtotime($log['target_date']))); ?></td>
+                        <td>
+                            <?php printf(
+                                __('Updated: %d, Skipped: %d, Errors: %d', 'woo-sub-date-manager'),
+                                $log['results']['updated'],
+                                $log['results']['skipped'],
+                                $log['results']['errors']
+                            ); ?>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
         <?php
     }
@@ -503,7 +566,27 @@ class WCSM_Admin {
                max="100" 
                step="5" />
         <p class="description">
-            <?php _e('Number of subscriptions to process in each batch (10-100).', 'woo-sub-date-manager'); ?>
+            <?php _e('Number of subscriptions to process in each batch (10-100). Lower values use less memory but take longer.', 'woo-sub-date-manager'); ?>
+        </p>
+        <?php
+    }
+
+    /**
+     * Render logging field
+     */
+    public function render_logging_field() {
+        $options = get_option('wcsm_options', array());
+        $enable_logging = isset($options['enable_logging']) ? (bool) $options['enable_logging'] : true;
+        ?>
+        <label>
+            <input type="checkbox" 
+                   name="wcsm_options[enable_logging]" 
+                   value="1" 
+                   <?php checked($enable_logging); ?> />
+            <?php _e('Enable detailed logging of all update activities', 'woo-sub-date-manager'); ?>
+        </label>
+        <p class="description">
+            <?php _e('When enabled, all update activities will be logged for review and debugging.', 'woo-sub-date-manager'); ?>
         </p>
         <?php
     }
@@ -516,7 +599,8 @@ class WCSM_Admin {
     public function get_settings() {
         return get_option('wcsm_options', array(
             'default_excluded_emails' => '',
-            'batch_size' => 25
+            'batch_size' => 25,
+            'enable_logging' => true
         ));
     }
 }

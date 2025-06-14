@@ -13,7 +13,7 @@ class WCSM_Core {
     /**
      * Plugin version
      */
-    const VERSION = '1.0.0';
+    const VERSION = '1.0.2';
 
     /**
      * Single instance of the class
@@ -43,6 +43,26 @@ class WCSM_Core {
     private function init_hooks() {
         // Add AJAX handlers
         add_action('wp_ajax_wcsm_update_dates', array($this, 'handle_ajax_update'));
+        
+        // Add admin notices for upgrades
+        add_action('admin_notices', array($this, 'upgrade_notice'));
+    }
+
+    /**
+     * Show upgrade notice
+     */
+    public function upgrade_notice() {
+        if (get_transient('wcsm_upgraded')) {
+            ?>
+            <div class="notice notice-success is-dismissible">
+                <p>
+                    <strong><?php _e('WooCommerce Subscription Date Manager Pro', 'woo-sub-date-manager'); ?></strong>
+                    <?php printf(__('has been updated to version %s successfully!', 'woo-sub-date-manager'), WCSM_VERSION); ?>
+                </p>
+            </div>
+            <?php
+            delete_transient('wcsm_upgraded');
+        }
     }
 
     /**
@@ -71,6 +91,9 @@ class WCSM_Core {
         $excluded_emails = isset($_POST['excluded_emails']) ? 
             array_map('trim', explode("\n", sanitize_textarea_field($_POST['excluded_emails']))) : 
             array();
+        
+        // Remove empty emails
+        $excluded_emails = array_filter($excluded_emails);
         
         // Validate dates
         if (!strtotime($new_date) || !strtotime($exclude_after)) {
@@ -133,6 +156,11 @@ class WCSM_Core {
             return $results;
         }
 
+        // Get batch size from settings
+        $options = get_option('wcsm_options', array());
+        $batch_size = isset($options['batch_size']) ? absint($options['batch_size']) : 25;
+        
+        $processed = 0;
         foreach ($subscriptions as $subscription) {
             try {
                 if (!$subscription || !is_a($subscription, 'WC_Subscription')) {
@@ -140,7 +168,7 @@ class WCSM_Core {
                     continue;
                 }
 
-                // Check excluded emails
+                // Check excluded emails (case-insensitive)
                 $billing_email = $subscription->get_billing_email();
                 if ($billing_email && in_array(strtolower($billing_email), array_map('strtolower', $excluded_emails))) {
                     $results['skipped']++;
@@ -160,8 +188,9 @@ class WCSM_Core {
                 // Add note to subscription
                 $subscription->add_order_note(
                     sprintf(
-                        __('Next payment date updated to %s via Date Manager Pro', 'woo-sub-date-manager'),
-                        date('Y-m-d', strtotime($target_date))
+                        __('Next payment date updated to %s via Date Manager Pro v%s', 'woo-sub-date-manager'),
+                        date('Y-m-d', strtotime($target_date)),
+                        self::VERSION
                     )
                 );
 
@@ -169,6 +198,13 @@ class WCSM_Core {
 
                 // Fire action hook
                 do_action('wcsm_subscription_updated', $subscription, $target_date);
+
+                // Process in batches to avoid memory issues
+                $processed++;
+                if ($processed % $batch_size === 0) {
+                    // Small delay to prevent overwhelming the server
+                    usleep(100000); // 0.1 seconds
+                }
 
             } catch (Exception $e) {
                 error_log('WCSM Subscription Update Error (ID: ' . $subscription->get_id() . '): ' . $e->getMessage());
@@ -186,10 +222,12 @@ class WCSM_Core {
         $log_entry = array(
             'timestamp' => current_time('mysql'),
             'user_id' => get_current_user_id(),
+            'user_login' => wp_get_current_user()->user_login,
             'target_date' => $target_date,
             'exclude_after' => $exclude_after,
             'excluded_emails_count' => count($excluded_emails),
-            'results' => $results
+            'results' => $results,
+            'version' => self::VERSION
         );
 
         // Store in option (keep last 10 entries)
@@ -211,5 +249,12 @@ class WCSM_Core {
      */
     public function clear_update_logs() {
         delete_option('wcsm_update_logs');
+    }
+
+    /**
+     * Get plugin version
+     */
+    public function get_version() {
+        return self::VERSION;
     }
 }

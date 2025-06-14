@@ -4,7 +4,7 @@ Tags: woocommerce, subscriptions, bulk update, payment dates, subscription manag
 Requires at least: 5.8
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -24,6 +24,8 @@ WooCommerce Subscription Date Manager Pro is a professional tool for WooCommerce
 * User-friendly interface
 * Advanced filtering options
 * Secure processing
+* Batch processing for performance
+* Comprehensive logging system
 
 = Perfect For =
 
@@ -64,6 +66,10 @@ We recommend taking a database backup before making changes. The plugin doesn't 
 
 Yes, it works with all subscription products created with WooCommerce Subscriptions.
 
+= How many subscriptions can I process at once? =
+
+The plugin uses batch processing to handle large numbers of subscriptions efficiently. The batch size can be configured in settings.
+
 == Screenshots ==
 
 1. Main interface
@@ -73,14 +79,40 @@ Yes, it works with all subscription products created with WooCommerce Subscripti
 
 == Changelog ==
 
+= 1.0.2 =
+* Enhanced batch processing for better performance
+* Improved error handling and logging
+* Added version tracking and upgrade notices
+* Better memory management for large subscription lists
+* Enhanced security with improved input validation
+* Added user information to activity logs
+* Improved email filtering (case-insensitive)
+* Added processing delays to prevent server overload
+
+= 1.0.1 =
+* Bug fixes and improvements
+* Enhanced admin interface
+* Improved AJAX security
+* Better form validation
+
 = 1.0.0 =
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.0.2 =
+Enhanced performance and security improvements. Recommended update for all users.
+
+= 1.0.1 =
+Important bug fixes and security improvements.
 
 = 1.0.0 =
 Initial release of WooCommerce Subscription Date Manager Pro
 
 == Privacy Policy ==
 
-This plugin does not collect or store any personal data outside of your WordPress installation.
+This plugin does not collect or store any personal data outside of your WordPress installation. All subscription data remains within your WordPress database and is processed locally.
+
+== Support ==
+
+For support and documentation, visit: https://designnairobi.agency
