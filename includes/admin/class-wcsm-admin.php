@@ -42,10 +42,12 @@ class WCSM_Admin {
     private function init_hooks() {
         // Settings
         add_action('admin_init', array($this, 'register_settings'));
-        add_action('admin_init', array($this, 'handle_settings_save'));
 
         // Menu and pages
         add_action('admin_menu', array($this, 'admin_menu'));
+
+        // Assets
+        add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
 
         // AJAX handlers
         add_action('wp_ajax_wcsm_get_subscriptions', array($this, 'ajax_get_subscriptions'));
@@ -53,6 +55,59 @@ class WCSM_Admin {
         
         // Notices
         add_action('admin_notices', array($this, 'admin_notices'));
+    }
+
+    /**
+     * Enqueue admin scripts and styles
+     */
+    public function enqueue_admin_assets() {
+        $screen = get_current_screen();
+        
+        // Only load on our plugin pages
+        if (!$screen || !in_array($screen->id, array(
+            'woocommerce_page_subscription-date-manager',
+            'woocommerce_page_subscription-date-manager-settings'
+        ))) {
+            return;
+        }
+
+        // Plugin version for cache busting
+        $version = WCSM_VERSION;
+
+        // Enqueue styles
+        wp_enqueue_style(
+            'wcsm-admin-styles',
+            WCSM_PLUGIN_URL . 'assets/css/admin.css',
+            array(),
+            $version
+        );
+
+        // jQuery UI Datepicker styles
+        wp_enqueue_style('jquery-ui-datepicker');
+
+        // Enqueue scripts
+        wp_enqueue_script('jquery');
+        wp_enqueue_script('jquery-ui-datepicker');
+        
+        wp_enqueue_script(
+            'wcsm-admin-script',
+            WCSM_PLUGIN_URL . 'assets/js/admin.js',
+            array('jquery', 'jquery-ui-datepicker'),
+            $version,
+            true
+        );
+
+        // Localize script with data
+        wp_localize_script('wcsm-admin-script', 'wcsmData', array(
+            'ajaxurl' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('wcsm_nonce'),
+            'i18n' => array(
+                'confirmUpdate' => __('Are you sure you want to update subscription dates? This action cannot be undone.', 'woo-sub-date-manager'),
+                'processing' => __('Processing...', 'woo-sub-date-manager'),
+                'success' => __('Update completed successfully!', 'woo-sub-date-manager'),
+                'error' => __('An error occurred while processing the update.', 'woo-sub-date-manager'),
+            )
+        ));
     }
 
     /**
@@ -134,6 +189,39 @@ class WCSM_Admin {
             <?php _e('Configure general settings for the subscription date manager.', 'woo-sub-date-manager'); ?>
         </p>
         <?php
+    }
+
+    /**
+     * Handle AJAX get subscriptions request
+     */
+    public function ajax_get_subscriptions() {
+        check_ajax_referer('wcsm_nonce', 'nonce');
+
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'woo-sub-date-manager')));
+            return;
+        }
+
+        try {
+            $subscriptions = wcs_get_subscriptions(array(
+                'subscriptions_per_page' => 50,
+                'subscription_status' => 'active'
+            ));
+
+            $subscription_data = array();
+            foreach ($subscriptions as $subscription) {
+                $subscription_data[] = array(
+                    'id' => $subscription->get_id(),
+                    'email' => $subscription->get_billing_email(),
+                    'next_payment' => $subscription->get_date('next_payment'),
+                    'status' => $subscription->get_status()
+                );
+            }
+
+            wp_send_json_success($subscription_data);
+        } catch (Exception $e) {
+            wp_send_json_error(array('message' => $e->getMessage()));
+        }
     }
 
     /**
@@ -255,6 +343,97 @@ class WCSM_Admin {
     }
 
     /**
+     * Render main admin page
+     */
+    public function render_admin_page() {
+        $settings = $this->get_settings();
+        ?>
+        <div class="wrap">
+            <h1><?php _e('Subscription Date Manager', 'woo-sub-date-manager'); ?></h1>
+            
+            <div class="wcsm-admin-container">
+                <form id="wcsm-update-form" method="post">
+                    <?php wp_nonce_field('wcsm_update_nonce', 'nonce'); ?>
+                    
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row">
+                                <label for="wcsm-new-date"><?php _e('New Payment Date', 'woo-sub-date-manager'); ?></label>
+                            </th>
+                            <td>
+                                <input type="date" 
+                                       id="wcsm-new-date" 
+                                       name="new_date" 
+                                       class="wcsm-date-input" 
+                                       required />
+                                <p class="description">
+                                    <?php _e('Select the new payment date for subscriptions.', 'woo-sub-date-manager'); ?>
+                                </p>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <th scope="row">
+                                <label for="wcsm-exclude-after"><?php _e('Exclude After Date', 'woo-sub-date-manager'); ?></label>
+                            </th>
+                            <td>
+                                <input type="date" 
+                                       id="wcsm-exclude-after" 
+                                       name="exclude_after" 
+                                       class="wcsm-date-input" 
+                                       required />
+                                <p class="description">
+                                    <?php _e('Subscriptions with payments after this date will be excluded.', 'woo-sub-date-manager'); ?>
+                                </p>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <th scope="row">
+                                <label for="wcsm-excluded-emails"><?php _e('Excluded Emails', 'woo-sub-date-manager'); ?></label>
+                            </th>
+                            <td>
+                                <textarea id="wcsm-excluded-emails" 
+                                          name="excluded_emails" 
+                                          rows="5" 
+                                          class="large-text code"><?php echo esc_textarea($settings['default_excluded_emails']); ?></textarea>
+                                <p class="description">
+                                    <?php _e('Enter one email address per line to exclude from updates.', 'woo-sub-date-manager'); ?>
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                    
+                    <p class="submit">
+                        <button type="submit" 
+                                id="wcsm-update-button" 
+                                class="button button-primary">
+                            <?php _e('Update Subscription Dates', 'woo-sub-date-manager'); ?>
+                        </button>
+                    </p>
+                </form>
+                
+                <div class="wcsm-progress" style="display: none;">
+                    <div class="wcsm-progress-bar">
+                        <div class="wcsm-progress-bar-inner"></div>
+                    </div>
+                    <p class="wcsm-progress-text"><?php _e('Processing...', 'woo-sub-date-manager'); ?></p>
+                </div>
+                
+                <div id="wcsm-results" style="display: none;"></div>
+                
+                <div class="wcsm-stats">
+                    <h3><?php _e('Statistics', 'woo-sub-date-manager'); ?></h3>
+                    <p><?php _e('Updated:', 'woo-sub-date-manager'); ?> <span id="wcsm-stat-updated">0</span></p>
+                    <p><?php _e('Skipped:', 'woo-sub-date-manager'); ?> <span id="wcsm-stat-skipped">0</span></p>
+                    <p><?php _e('Errors:', 'woo-sub-date-manager'); ?> <span id="wcsm-stat-errors">0</span></p>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
      * Render settings page
      */
     public function render_settings_page() {
@@ -291,21 +470,6 @@ class WCSM_Admin {
                 <p><?php _e('An error occurred while saving settings.', 'woo-sub-date-manager'); ?></p>
             </div>
             <?php
-        }
-    }
-
-    /**
-     * Handle settings save
-     */
-    public function handle_settings_save() {
-        if (
-            isset($_POST['wcsm_settings_nonce']) &&
-            wp_verify_nonce($_POST['wcsm_settings_nonce'], 'wcsm_save_settings')
-        ) {
-            // Process settings save
-            update_option('wcsm_settings', $this->sanitize_settings($_POST['wcsm_settings']));
-            wp_redirect(add_query_arg('wcsm-updated', 'true'));
-            exit;
         }
     }
 

@@ -49,7 +49,11 @@ class WCSM_Core {
      * Handle AJAX update request
      */
     public function handle_ajax_update() {
-        check_ajax_referer('wcsm_update_nonce', 'nonce');
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'wcsm_nonce')) {
+            wp_send_json_error(array('message' => __('Security check failed.', 'woo-sub-date-manager')));
+            return;
+        }
         
         if (!current_user_can('manage_woocommerce')) {
             wp_send_json_error(array('message' => __('Permission denied.', 'woo-sub-date-manager')));
@@ -57,13 +61,26 @@ class WCSM_Core {
         }
 
         // Validate input
+        if (!isset($_POST['new_date']) || !isset($_POST['exclude_after'])) {
+            wp_send_json_error(array('message' => __('Missing required fields.', 'woo-sub-date-manager')));
+            return;
+        }
+
         $new_date = sanitize_text_field($_POST['new_date']);
         $exclude_after = sanitize_text_field($_POST['exclude_after']);
-        $excluded_emails = array_map('trim', explode("\n", sanitize_textarea_field($_POST['excluded_emails'])));
+        $excluded_emails = isset($_POST['excluded_emails']) ? 
+            array_map('trim', explode("\n", sanitize_textarea_field($_POST['excluded_emails']))) : 
+            array();
         
         // Validate dates
         if (!strtotime($new_date) || !strtotime($exclude_after)) {
             wp_send_json_error(array('message' => __('Invalid date format.', 'woo-sub-date-manager')));
+            return;
+        }
+
+        // Check if new date is after exclude date
+        if (strtotime($new_date) <= strtotime($exclude_after)) {
+            wp_send_json_error(array('message' => __('New payment date must be after the exclusion date.', 'woo-sub-date-manager')));
             return;
         }
 
@@ -74,6 +91,9 @@ class WCSM_Core {
         try {
             // Process subscriptions
             $results = $this->process_subscriptions($target_date, $exclude_timestamp, $excluded_emails);
+
+            // Log the update
+            $this->log_update($results, $target_date, $exclude_after, $excluded_emails);
 
             wp_send_json_success(array(
                 'message' => sprintf(
@@ -86,8 +106,9 @@ class WCSM_Core {
             ));
 
         } catch (Exception $e) {
+            error_log('WCSM Update Error: ' . $e->getMessage());
             wp_send_json_error(array(
-                'message' => $e->getMessage()
+                'message' => __('An error occurred while processing the update. Please check the error log.', 'woo-sub-date-manager')
             ));
         }
     }
@@ -102,26 +123,26 @@ class WCSM_Core {
             'errors' => 0
         );
 
-        $args = array(
-            'post_type' => 'shop_subscription',
-            'post_status' => 'wc-active',
-            'posts_per_page' => -1,
-            'fields' => 'ids'
-        );
+        // Get active subscriptions
+        $subscriptions = wcs_get_subscriptions(array(
+            'subscription_status' => 'active',
+            'subscriptions_per_page' => -1
+        ));
 
-        $subscription_ids = get_posts($args);
+        if (empty($subscriptions)) {
+            return $results;
+        }
 
-        foreach ($subscription_ids as $subscription_id) {
+        foreach ($subscriptions as $subscription) {
             try {
-                $subscription = wcs_get_subscription($subscription_id);
-                
                 if (!$subscription || !is_a($subscription, 'WC_Subscription')) {
                     $results['errors']++;
                     continue;
                 }
 
                 // Check excluded emails
-                if (in_array(strtolower($subscription->get_billing_email()), array_map('strtolower', $excluded_emails))) {
+                $billing_email = $subscription->get_billing_email();
+                if ($billing_email && in_array(strtolower($billing_email), array_map('strtolower', $excluded_emails))) {
                     $results['skipped']++;
                     continue;
                 }
@@ -135,13 +156,60 @@ class WCSM_Core {
 
                 // Update next payment date
                 $subscription->update_dates(array('next_payment' => $target_date));
+                
+                // Add note to subscription
+                $subscription->add_order_note(
+                    sprintf(
+                        __('Next payment date updated to %s via Date Manager Pro', 'woo-sub-date-manager'),
+                        date('Y-m-d', strtotime($target_date))
+                    )
+                );
+
                 $results['updated']++;
 
+                // Fire action hook
+                do_action('wcsm_subscription_updated', $subscription, $target_date);
+
             } catch (Exception $e) {
+                error_log('WCSM Subscription Update Error (ID: ' . $subscription->get_id() . '): ' . $e->getMessage());
                 $results['errors']++;
             }
         }
 
         return $results;
+    }
+
+    /**
+     * Log update activity
+     */
+    private function log_update($results, $target_date, $exclude_after, $excluded_emails) {
+        $log_entry = array(
+            'timestamp' => current_time('mysql'),
+            'user_id' => get_current_user_id(),
+            'target_date' => $target_date,
+            'exclude_after' => $exclude_after,
+            'excluded_emails_count' => count($excluded_emails),
+            'results' => $results
+        );
+
+        // Store in option (keep last 10 entries)
+        $logs = get_option('wcsm_update_logs', array());
+        array_unshift($logs, $log_entry);
+        $logs = array_slice($logs, 0, 10);
+        update_option('wcsm_update_logs', $logs);
+    }
+
+    /**
+     * Get update logs
+     */
+    public function get_update_logs() {
+        return get_option('wcsm_update_logs', array());
+    }
+
+    /**
+     * Clear update logs
+     */
+    public function clear_update_logs() {
+        delete_option('wcsm_update_logs');
     }
 }

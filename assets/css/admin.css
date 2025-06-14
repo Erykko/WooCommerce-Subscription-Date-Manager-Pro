@@ -1,0 +1,204 @@
+/**
+ * WooCommerce Subscription Date Manager Pro
+ * Admin Styles
+ */
+
+.wcsm-admin-container {
+    max-width: 800px;
+}
+
+.wcsm-progress {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.wcsm-progress-bar {
+    width: 100%;
+    height: 20px;
+    background: #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.wcsm-progress-bar-inner {
+    height: 100%;
+    background: #0073aa;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.wcsm-progress-text {
+    margin: 0;
+    font-weight: 600;
+    text-align: center;
+}
+
+.wcsm-stats {
+    margin-top: 30px;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.wcsm-stats h3 {
+    margin-top: 0;
+    color: #23282d;
+}
+
+.wcsm-stats p {
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.wcsm-stats span {
+    font-weight: bold;
+    color: #0073aa;
+}
+
+#wcsm-results {
+    margin: 20px 0;
+    padding: 15px;
+    border-radius: 4px;
+}
+
+#wcsm-results.notice-success {
+    background: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+#wcsm-results.notice-error {
+    background: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+.wcsm-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.wcsm-date-input {
+    width: 200px;
+}
+
+/* jQuery UI Datepicker customization */
+.ui-datepicker {
+    font-size: 14px;
+}
+
+.ui-datepicker-header {
+    background: #0073aa;
+    color: white;
+}
+
+.ui-datepicker-title {
+    color: white;
+}
+
+.ui-datepicker-prev,
+.ui-datepicker-next {
+    color: white;
+}
+
+.ui-datepicker td a {
+    text-align: center;
+    padding: 6px;
+}
+
+.ui-datepicker td a:hover {
+    background: #0073aa;
+    color: white;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .wcsm-admin-container {
+        max-width: 100%;
+    }
+    
+    .wcsm-date-input {
+        width: 100%;
+        max-width: 200px;
+    }
+    
+    .form-table th,
+    .form-table td {
+        display: block;
+        width: 100%;
+        padding: 10px 0;
+    }
+    
+    .form-table th {
+        border-bottom: none;
+        padding-bottom: 5px;
+    }
+}
+
+/* Loading animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.wcsm-loading::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #0073aa;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Form validation styles */
+.wcsm-field-error {
+    border-color: #dc3232 !important;
+    box-shadow: 0 0 2px rgba(220, 50, 50, 0.8);
+}
+
+.wcsm-error-message {
+    color: #dc3232;
+    font-size: 12px;
+    margin-top: 5px;
+    display: block;
+}
+
+/* Success states */
+.wcsm-field-success {
+    border-color: #46b450 !important;
+    box-shadow: 0 0 2px rgba(70, 180, 80, 0.8);
+}
+
+/* Button states */
+#wcsm-update-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#wcsm-update-button.processing {
+    position: relative;
+}
+
+#wcsm-update-button.processing::after {
+    content: '';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    width: 16px;
+    height: 16px;
+    margin-top: -8px;
+    border: 2px solid transparent;
+    border-top: 2px solid #fff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
